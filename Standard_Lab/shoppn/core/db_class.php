@@ -6,7 +6,7 @@ class Database {
 
   public function __construct() { 
 
-    require_once 'db_cred.php'; 
+    require_once __DIR__ . '/db_cred.php'; 
 
     $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME); 
 
