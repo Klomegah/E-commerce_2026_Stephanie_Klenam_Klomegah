@@ -69,12 +69,7 @@ require_once __DIR__ . '/db_class.php';
 
 /**
  * The visitor's IP address.
- *
- * The cart table stores guest carts against ip_add, so this value
- * decides whose cart a product gets added to. localhost can arrive
- * as either ::1 or 127.0.0.1 depending on the browser, so both are
- * normalised - otherwise one person gets two separate carts.
- * 
+ 
  */
 function get_ip() {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
@@ -108,8 +103,7 @@ function core_get_user_id() {
 
 /* ------------------------------------------------------------
    CHECKPOINT: get the logged-in user's role
-   Same idea as above, for role (e.g. admin, customer, staff) so
-   pages can decide what to show based on who's looking.
+  
    ------------------------------------------------------------ */
 function core_get_user_role() {
     return $_SESSION['user_role'] ?? null;
@@ -119,29 +113,14 @@ function core_get_user_role() {
 /* ------------------------------------------------------------
    CHECKPOINT: check for login
    A function that checks if a "logged in" session value is set.
-   ------------------------------------------------------------
-   NOTE - a deliberate difference from the original note above.
-
-   This does NOT force a login on every page. "Not logged in" is a
-   perfectly valid state for the home page, the register page and
-   the login page itself. If this redirected everyone, anonymous
-   visitors could not browse the shop at all.
-
-   Enforcing a login is a separate, opt-in step - require_login() -
-   which each protected page calls deliberately at the top, before
-   it prints any HTML.
-   ------------------------------------------------------------ */
+*/
 function is_logged_in() {
     return isset($_SESSION['customer_id']);
 }
 
 /**
  * True when the signed-in user has user_role 1 (admin).
- *
- * Strict === is safe only because the login action stores the role
- * as an integer. mysqli can return the string "1" instead of the
- * number 1, and "1" === 1 is FALSE - which would silently hide the
- * admin links forever. That is why login_action.php casts to (int).
+ 
  */
 function is_admin() {
     return core_get_user_role() === 1;
@@ -149,7 +128,7 @@ function is_admin() {
 
 /**
  * Authorisation gate for customer-only pages.
- * Call as the very first line, before any HTML is output.
+
  */
 function require_login() {
     if (!is_logged_in()) {
@@ -175,6 +154,7 @@ function require_admin() {
    cookie, destroys the session, and starts a fresh one - used by
    both a manual "log out" click and the automatic checks below.
    ------------------------------------------------------------ */
+
 function secureLogout() {
     // 1. Empty the data.
     $_SESSION = [];
@@ -182,6 +162,7 @@ function secureLogout() {
     // 2. Issue a brand-new session ID and delete the old one.
     //    Without this, a session ID captured before login stays
     //    valid afterwards - that is "session fixation".
+    
     session_regenerate_id(true);
 
     // 3. Delete the cookie in the browser.
@@ -235,12 +216,7 @@ function checkSessionTimeout() {
    Store the user's IP address and browser (User-Agent) at login.
    On every page load, compare them to the current request - if
    they don't match, something is wrong, so log the user out.
-   ------------------------------------------------------------
-   Only the IP is enforced. The User-Agent is deliberately NOT
-   compared: browsers update themselves mid-session and phones
-   roam between Wi-Fi and mobile data, either of which would log
-   an honest user out at random. IP alone catches the realistic
-   attacks with far fewer false alarms.
+ 
    ------------------------------------------------------------ */
 function checkSessionHijack() {
     if (!isset($_SESSION['fingerprint_ip'])) {

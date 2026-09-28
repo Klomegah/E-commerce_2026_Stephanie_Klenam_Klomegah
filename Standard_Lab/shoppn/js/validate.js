@@ -19,8 +19,6 @@ const MAX = {
 
 /**
  * Show or clear the inline message for one field.
- * The error span's id is always 'err-' + the input's id, which is why
- * every input in register.php follows that naming pattern.
  */
 
 function setError(input, message) {
@@ -38,8 +36,6 @@ function clearErrors(form) {
 
 /**
  * Validate one field. Returns true if it is acceptable.
- * Empty is handled separately by requiredFields(), so an untouched
- * field is not shouted at before the user has finished typing.
  */
 
 function validateField(input) {
@@ -108,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Re-validate as the user leaves a field, so the message clears
     // itself the moment they fix the problem.
-    
+
     form.querySelectorAll('input, select').forEach(function (input) {
         input.addEventListener('blur', function () {
             validateField(input);
