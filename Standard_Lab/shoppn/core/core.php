@@ -5,7 +5,6 @@
 // ------------------------------------------------------------
 // Included at the top of every page: require_once __DIR__ . '/core/core.php';
 // Anything that must happen on EVERY page load lives here.
-// It is NOT the place for SQL - that is core/db_class.php.
 // ============================================================
 
 
@@ -23,9 +22,7 @@ date_default_timezone_set('Africa/Accra');
 
 
 /* ------------------------------------------------------------
-   CHECKPOINT: start output buffering (ob_start())
-   header('Location: ...') redirects fail if any output was already
-   sent to the browser. Buffering output here means pages further
+  Buffering output here means pages further
    down the line can still redirect safely even after printing
    something.
    ------------------------------------------------------------ */
@@ -45,11 +42,10 @@ define('BASE_URL', '/~stephanie.klomegah/E-commerce_2026_Stephanie_Klenam_Klomeg
    CHECKPOINT: start and secure the session
    - session_start() must run before $_SESSION can be read/written
      anywhere else in the app
-   - on a real (HTTPS) server, harden the session cookie:
-     session.cookie_secure, session.cookie_httponly, session.cookie_samesite
    ------------------------------------------------------------ */
 
 // How long a logged-in user may sit idle before being logged out.
+
 define('SESSION_TIMEOUT', 1800); // 30 minutes
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -63,7 +59,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// The database base class. Child classes (CustomerClass etc.) extend it.
 require_once __DIR__ . '/db_class.php';
 
 
@@ -92,16 +87,11 @@ function get_ip() {
 /**
  * Send the browser to another page and stop everything.
  *
- * header() only QUEUES a redirect; it does not halt the script.
- * Without exit, the rest of the page keeps printing and some
- * browsers show that output instead of following the redirect.
- *
- * Bare paths like 'views/login.php' get BASE_URL prepended.
  */
 function redirect($url) {
     if (strpos($url, 'http') !== 0) {
         $url = BASE_URL . ltrim($url, '/');
-    }
+    
     header('Location: ' . $url);
     exit;
 }
@@ -109,8 +99,7 @@ function redirect($url) {
 
 /* ------------------------------------------------------------
    CHECKPOINT: get the logged-in user's id
-   A small getter so pages don't touch $_SESSION directly - they
-   just call something like core_get_user_id().
+
    ------------------------------------------------------------ */
 function core_get_user_id() {
     return $_SESSION['customer_id'] ?? null;
