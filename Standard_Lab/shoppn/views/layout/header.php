@@ -1,24 +1,15 @@
 <?php
 /**
- * views/layout/header.php - shared page head and navigation.
+ * Header partial for the Shoppn application.
  *
- * Included at the top of every view. It is a PARTIAL, so it must not
- * load core.php; it assumes core.php is already included by whichever
- * entry point rendered this page.
+ * This file is included at the top of every page, before the main
+ * content and sidebar. It contains the opening <html> and <body>
+ * tags, as well as any header content you want to display on every page.
  *
- * MVC RULE: no SQL in this file. It may read $_SESSION (that is not a
- * database call) and may call helpers, but it never queries.
- * The nav changes based on session state - that is the only logic here.
- *
- * The guard below stops anyone opening this file directly in the browser.
- * Every protected view in this project uses the same guard.
  */
-
-if (!function_exists('is_logged_in')) {
-    exit('Direct access forbidden.');
-}
 ?>
-<!DOCTYPE html>
+
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">

@@ -1,16 +1,19 @@
 <?php
+
 /**
- * views/layout/footer.php - closes the page opened by header.php.
+ * Footer partial for the Shoppn application.
  *
- * A PARTIAL: no core.php include, no SQL, no logic beyond the year.
+ * This file is included at the bottom of every page, after the main
+ * content and sidebar. It contains the closing </body> and </html>
+ * tags, as well as any footer content you want to display on every page.
+ *
  */
 
-if (!function_exists('is_logged_in')) {
-    exit('Direct access forbidden.');
-}
 ?>
+
 <footer class="site-footer">
     <p>&copy; <?= date('Y') ?> Shoppn. All rights reserved.</p>
 </footer>
-</body>
-</html>
+
+
+

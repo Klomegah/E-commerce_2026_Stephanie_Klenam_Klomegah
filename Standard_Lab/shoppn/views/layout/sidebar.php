@@ -2,28 +2,23 @@
 /**
  * views/layout/sidebar.php - categories and brands.
  *
- * A PARTIAL, and a good example of why the MVC layers exist.
  * Look how far the data travels to reach this HTML:
  *
  *   sidebar.php  ->  ProductController  ->  ProductClass  ->  Database
  *   (View)          (decides/guards)       (owns the SQL)     (connection)
  *
- * The View cannot simply write the query itself, because the moment
- * it did, database logic would start leaking into your templates.
- * Going through the Controller also means this is the one place to
- * add an admin-only check later, without editing the HTML.
  */
 
-if (!function_exists('is_logged_in')) {
-    exit('Direct access forbidden.');
-}
+
 
 require_once __DIR__ . '/../../controllers/ProductController.php';
 
 $productController = new ProductController();
 $categories = $productController->getCategories();
 $brands     = $productController->getBrands();
+
 ?>
+
 <aside class="sidebar">
     <section>
         <h3>Categories</h3>
