@@ -6,10 +6,6 @@
 // Included at the top of every page: require_once __DIR__ . '/core/core.php';
 // Anything that must happen on EVERY page load lives here.
 // It is NOT the place for SQL - that is core/db_class.php.
-//
-// Structure follows the checklist below. Each original point is
-// kept as a section header, with the implementation underneath,
-// so the checklist can be marked off.
 // ============================================================
 
 
@@ -17,6 +13,7 @@
 // 1. ERROR HANDLING  (added)
 // Log errors to a file instead of showing them to the visitor.
 // Showing them leaks your folder paths and database structure.
+
 // ------------------------------------------------------------
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -82,6 +79,7 @@ require_once __DIR__ . '/db_class.php';
  * decides whose cart a product gets added to. localhost can arrive
  * as either ::1 or 127.0.0.1 depending on the browser, so both are
  * normalised - otherwise one person gets two separate carts.
+ * 
  */
 function get_ip() {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
