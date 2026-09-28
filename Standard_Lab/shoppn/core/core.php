@@ -41,7 +41,7 @@ ob_start();
 // Must match the folder path exactly, including the repository
 // root folder, or the stylesheet and every link will 404.
 // ------------------------------------------------------------
-define('BASE_URL', '/E-commerce_2026_Stephanie_Klenam_Klomegah-1/Standard_Lab/shoppn/');
+define('BASE_URL', '/~stephanie.klomegah/E-commerce_2026_Stephanie_Klenam_Klomegah/Standard_Lab/shoppn/');
 
 
 /* ------------------------------------------------------------
