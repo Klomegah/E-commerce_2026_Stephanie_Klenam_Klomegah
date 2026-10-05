@@ -1,19 +1,8 @@
 <?php
 
-// ============================================================
-// core.php
-// ------------------------------------------------------------
-// Included at the top of every page: require_once __DIR__ . '/core/core.php';
-// Anything that must happen on EVERY page load lives here.
-// ============================================================
 
 
-// ------------------------------------------------------------
-// 1. ERROR HANDLING  (added)
-// Log errors to a file instead of showing them to the visitor.
-// Showing them leaks your folder paths and database structure.
 
-// ------------------------------------------------------------
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../error/error.log');
@@ -21,40 +10,35 @@ ini_set('error_log', __DIR__ . '/../error/error.log');
 date_default_timezone_set('Africa/Accra');
 
 
-/* ------------------------------------------------------------
-  Buffering output here means pages further
-   down the line can still redirect safely even after printing
-   something.
-   ------------------------------------------------------------ */
 ob_start();
 
 
-// ------------------------------------------------------------
-// Site base path. One line controls every link in the whole app,
-// so moving the project never breaks a single href.
-// Must match the folder path exactly, including the repository
-// root folder, or the stylesheet and every link will 404.
-// ------------------------------------------------------------
-define('BASE_URL', '/~stephanie.klomegah/E-commerce_2026_Stephanie_Klenam_Klomegah/Standard_Lab/shoppn/');
+$document_root = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
+$application_root = realpath(__DIR__ . '/..');
+
+if ($document_root === false || $application_root === false
+    || strpos($application_root, $document_root) !== 0) {
+    error_log('Unable to determine the application URL from the Apache document root.');
+    define('BASE_URL', '/');
+} else {
+    $application_path = substr($application_root, strlen($document_root));
+    $application_path = str_replace(DIRECTORY_SEPARATOR, '/', $application_path);
+    define('BASE_URL', '/' . trim($application_path, '/') . '/');
+}
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: start and secure the session
-   - session_start() must run before $_SESSION can be read/written
-     anywhere else in the app
-   ------------------------------------------------------------ */
+/* ------------------------------------------------------------ CHECKPOINT: start and secure the session - session_start() must run before $_SESSION can be read written anywhere else in the app ------------------------------------------------------------. */
 
-// How long a logged-in user may sit idle before being logged out.
 
-define('SESSION_TIMEOUT', 1800); // 30 minutes
+define('SESSION_TIMEOUT', 1800);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
-        'secure'   => false,  // set to true on real HTTPS hosting
-        'httponly' => true,   // JavaScript cannot read the session cookie
-        'samesite' => 'Lax',  // blocks cross-site form submissions
+        'secure'   => false,
+        'httponly' => true, // JavaScript cannot read the session cookie.
+        'samesite' => 'Lax',
     ]);
     session_start();
 }
@@ -62,15 +46,8 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/db_class.php';
 
 
-// ============================================================
-// SHARED HELPER FUNCTIONS
-// ============================================================
 
 
-/**
- * The visitor's IP address.
- 
- */
 function get_ip() {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     if ($ip === '::1' || $ip === '127.0.0.1') {
@@ -79,57 +56,37 @@ function get_ip() {
     return $ip;
 }
 
-/**
- * Send the browser to another page and stop everything.
- *
- */
 function redirect($url) {
     if (strpos($url, 'http') !== 0) {
         $url = BASE_URL . ltrim($url, '/');
-    
+    }
+
     header('Location: ' . $url);
     exit;
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: get the logged-in user's id
-
-   ------------------------------------------------------------ */
 function core_get_user_id() {
     return $_SESSION['customer_id'] ?? null;
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: get the logged-in user's role
-  
-   ------------------------------------------------------------ */
 function core_get_user_role() {
     return $_SESSION['user_role'] ?? null;
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: check for login
-   A function that checks if a "logged in" session value is set.
-*/
+/* ------------------------------------------------------------ CHECKPOINT: check for login A function that checks if a "logged in" session value is set. */
 function is_logged_in() {
     return isset($_SESSION['customer_id']);
 }
 
-/**
- * True when the signed-in user has user_role 1 (admin).
- 
- */
 function is_admin() {
     return core_get_user_role() === 1;
 }
 
-/**
- * Authorisation gate for customer-only pages.
+/* Authorisation gate for customer-only pages. */
 
- */
 function require_login() {
     if (!is_logged_in()) {
         $_SESSION['error'] = 'Please log in to continue.';
@@ -137,9 +94,7 @@ function require_login() {
     }
 }
 
-/**
- * Authorisation gate for admin-only pages.
- */
+/* Authorisation gate for admin-only pages. */
 function require_admin() {
     if (!is_admin()) {
         $_SESSION['error'] = 'Access denied. Admin only.';
@@ -148,24 +103,17 @@ function require_admin() {
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: secure logout
-   A function that clears all session data, deletes the session
-   cookie, destroys the session, and starts a fresh one - used by
-   both a manual "log out" click and the automatic checks below.
-   ------------------------------------------------------------ */
+/* ------------------------------------------------------------ CHECKPOINT: secure logout A function that clears all session data, deletes the session cookie, destroys the session, and starts a fresh one - used by both a manual "log out" click and the automatic checks below. */
 
 function secureLogout() {
-    // 1. Empty the data.
     $_SESSION = [];
 
-    // 2. Issue a brand-new session ID and delete the old one.
-    //    Without this, a session ID captured before login stays
-    //    valid afterwards - that is "session fixation".
+    // 2.
+    // Without this, a session ID captured before login stays.
+    // valid afterwards - that is "session fixation".
     
     session_regenerate_id(true);
 
-    // 3. Delete the cookie in the browser.
     if (ini_get('session.use_cookies')) {
         $p = session_get_cookie_params();
         setcookie(
@@ -179,22 +127,17 @@ function secureLogout() {
         );
     }
 
-    // 4. Delete the session file on the server.
+    // 4.
     session_destroy();
 
-    // 5. Start a fresh empty session. Without this there is nowhere
-    //    to store "you have logged out" or "your session expired",
-    //    and the message silently vanishes.
+    // 5.
+    // to store "you have logged out" or "your session expired",.
     session_start();
     session_regenerate_id(true);
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: session timeout
-   Track the time of the last request. If too much time has passed
-   since then, log the user out automatically.
-   ------------------------------------------------------------ */
+/* ------------------------------------------------------------ CHECKPOINT: session timeout Track the time of the last request. */
 function checkSessionTimeout() {
     $now = time();
 
@@ -206,18 +149,11 @@ function checkSessionTimeout() {
         }
     }
 
-    // Store "right now" so the countdown restarts on this request.
     $_SESSION['last_activity'] = $now;
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: detect session hijacking
-   Store the user's IP address and browser (User-Agent) at login.
-   On every page load, compare them to the current request - if
-   they don't match, something is wrong, so log the user out.
- 
-   ------------------------------------------------------------ */
+/* ------------------------------------------------------------ CHECKPOINT: detect session hijacking Store the user's IP address and browser (User-Agent) at login. */
 function checkSessionHijack() {
     if (!isset($_SESSION['fingerprint_ip'])) {
         // First page load after login - record the fingerprint.
@@ -226,8 +162,7 @@ function checkSessionHijack() {
     }
 
     if ($_SESSION['fingerprint_ip'] !== get_ip()) {
-        // The same session cookie is suddenly being used from a
-        // different IP address. Treat it as stolen.
+        // The same session cookie is suddenly being used from a.
         secureLogout();
         $_SESSION['error'] = 'Security alert: signed in from another location.';
         redirect('views/login.php');
@@ -235,14 +170,8 @@ function checkSessionHijack() {
 }
 
 
-/* ------------------------------------------------------------
-   CHECKPOINT: actually run the session check(s) above
-   Whatever function ties this all together (e.g. sessionSecurity())
-   should be called here, so simply including this file is enough
-   to protect a page - no extra function calls needed on every page.
-   ------------------------------------------------------------ */
+/* ------------------------------------------------------------ CHECKPOINT: actually run the session check(s) above Whatever function ties this all together (e.g. */
 function sessionSecurity() {
-    // Nothing to secure if nobody is signed in. Public pages stay public.
     if (!is_logged_in()) {
         return;
     }

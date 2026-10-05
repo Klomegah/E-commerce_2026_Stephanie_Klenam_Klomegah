@@ -8,6 +8,7 @@
     --bg:         #f4f6f9;
     --error-bg:   #fdecea;
     --error-fg:   #b3261e;
+    --ok-fg:      #15803d;
 }
 
 * { box-sizing: border-box; }
@@ -131,7 +132,8 @@ a:hover { text-decoration: underline; }
 }
 
 .form-row input,
-.form-row select {
+.form-row select,
+.form-row textarea {
     width: 100%;
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--border);
@@ -140,16 +142,25 @@ a:hover { text-decoration: underline; }
     font-family: inherit;
 }
 
+/* Keep file inputs at their intrinsic width. */
+.form-row input[type="file"] {
+    width: auto;
+    padding: 0.4rem 0;
+    border: none;
+}
+
 .form-row input:focus,
-.form-row select:focus {
+.form-row select:focus,
+.form-row textarea:focus {
     outline: none;
     border-color: var(--brand);
     box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.15);
 }
 
-/* Set by validate.js when a field fails. */
+/* Validation error state. */
 .form-row input.invalid,
-.form-row select.invalid {
+.form-row select.invalid,
+.form-row textarea.invalid {
     border-color: var(--error-fg);
 }
 
@@ -159,6 +170,131 @@ a:hover { text-decoration: underline; }
     margin-top: 0.25rem;
     color: var(--error-fg);
     font-size: 0.83rem;
+}
+
+/* Explanatory text under a field, e.g. the expected phone format.
+   Deliberately not an error: it is grey, not red. */
+.hint {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    font-size: 0.83rem;
+}
+
+/* ---------- Password strength meter + checklist ----------
+   The checklist has to be obvious at a glance, so a satisfied rule
+   changes the WHOLE row - background, border, text colour and a tick -
+   rather than just recolouring a small box that is easy to miss. */
+
+/* Password checklist summary. */
+.password-meter {
+    margin: 0.6rem 0 0.25rem;
+}
+
+#password-rules-count {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+#password-rules-count.complete {
+    color: var(--ok-fg);
+}
+
+/* Align the checklist count and character count. */
+.password-meter-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.password-length {
+    font-weight: 400;
+    font-size: 0.78rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.password-length.short { color: #b45309; }
+.password-length.over { color: var(--error-fg); }
+
+.password-meter-track {
+    height: 6px;
+    margin-top: 0.3rem;
+    border-radius: 999px;
+    background: #e6e9ee;
+    overflow: hidden;
+}
+
+.password-meter-fill {
+    width: 0;
+    height: 100%;
+    border-radius: 999px;
+    background: #d1a13a;
+    transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+/* Green bar when all password rules pass. */
+.password-meter-fill.complete {
+    background: var(--ok-fg);
+}
+
+.password-rules {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.83rem;
+}
+
+.password-rules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--muted);
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+                color 0.15s ease;
+}
+
+/* The tick itself. A real character is used rather than a border trick,
+   because it scales with the font and cannot be misaligned. */
+.password-rules .tick {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    line-height: 1.1rem;
+    margin-top: 0.05rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: #fff;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: transparent;
+}
+
+.password-rules .rule-text { flex: 1 1 auto; }
+
+/* Green styling for satisfied rules. */
+.password-rules li.met {
+    border-color: #b7e0c4;
+    background: #f0faf3;
+    color: var(--ok-fg);
+}
+
+.password-rules li.met .tick {
+    border-color: var(--ok-fg);
+    background: var(--ok-fg);
+    color: #fff;
+}
+
+.password-rules li.met .tick::before {
+    content: '\2713';
 }
 
 .btn {
@@ -199,6 +335,27 @@ a:hover { text-decoration: underline; }
 
 .muted { color: var(--muted); font-size: 0.9rem; }
 
+/* ---------- Admin: product images ---------- */
+
+/* Product image preview. */
+.admin-image-preview {
+    max-width: 220px;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+}
+
+/* Product table thumbnail. */
+.admin-thumb {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #fff;
+}
+
 /* ---------- Tables ---------- */
 
 .detail-table {
@@ -236,9 +393,34 @@ a:hover { text-decoration: underline; }
     background: #fff;
 }
 
+/* The photo on a product card.
+
+   height is fixed and object-fit:cover so that a grid of cards lines up
+   into neat rows. Without it, one tall image would make its whole card
+   taller than its neighbours and the grid would look broken. */
+.product-thumb {
+    display: block;
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    margin-bottom: 0.6rem;
+    border-radius: 6px;
+    background: #f4f6f9;
+}
+
+/* Stands in for a product that has no image, so the card keeps its
+   shape instead of collapsing to just a title. */
+.product-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
 .product-card h4 { margin: 0 0 0.35rem; font-size: 0.98rem; }
 .product-card .price { color: var(--brand); font-weight: 700; }
-.product-card .meta { color: var(--muted); font-size: 0.82rem; }
+.product-card .meta { color: var(--muted); font-size: 0.82rem; margin-bottom: 0.35rem; }
 
 /* ---------- Footer ---------- */
 
@@ -257,4 +439,5 @@ a:hover { text-decoration: underline; }
 @media (max-width: 700px) {
     .container { flex-direction: column; }
     .sidebar { flex: 1 1 auto; width: 100%; }
+    
 }

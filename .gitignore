@@ -23,3 +23,9 @@ rad.json
 TestResults.xml
 
 db_cred.php
+
+# Runtime logs and uploaded images.
+Standard_Lab/shoppn/error/*.log
+Standard_Lab/shoppn/images/products/*
+!Standard_Lab/shoppn/images/products/.gitkeep
+!Standard_Lab/shoppn/images/products/6ac2c90012a3b.png

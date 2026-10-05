@@ -1,19 +1,16 @@
 <?php
 
-/**
- * actions/register_action.php - the server entry point for sign-up.
- */
 
 require_once __DIR__ . '/../core/core.php';
+require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
-// ---------- 1. POST only ----------
+// ---------- 1.
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('views/register.php');
 }
 
-// ---------- 2. Sanitise ----------
 
 
 $name    = trim(strip_tags($_POST['customer_name']    ?? ''));
@@ -23,7 +20,9 @@ $country = trim(strip_tags($_POST['customer_country'] ?? ''));
 $city    = trim(strip_tags($_POST['customer_city']    ?? ''));
 $contact = trim(strip_tags($_POST['customer_contact'] ?? ''));
 
-// ---------- 3. Validate ----------
+// The retyped password, checked only to confirm the two boxes agree.
+$passConfirm = $_POST['customer_pass_confirm'] ?? null;
+
 
 $error = '';
 
@@ -35,14 +34,16 @@ if ($error === '' && mb_strlen($name) > CustomerClass::MAX_NAME) {
     $error = 'Name must be ' . CustomerClass::MAX_NAME . ' characters or fewer.';
 }
 
-if ($error === '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    $error = 'Please enter a valid email address.';
-}
-
-// The brief says "VARCHAR 100" here, but the live column is varchar(50).
-// Checking against the real column is the point of the exercise.
 if ($error === '' && mb_strlen($email) > CustomerClass::MAX_EMAIL) {
     $error = 'Email must be ' . CustomerClass::MAX_EMAIL . ' characters or fewer.';
+}
+
+if ($error === '') {
+    $error = Validator::checkEmail($email) ?? '';
+}
+
+if ($error === '' && !in_array($country, Validator::countries(), true)) {
+    $error = 'Please choose a country from the list.';
 }
 
 if ($error === '' && mb_strlen($country) > CustomerClass::MAX_COUNTRY) {
@@ -53,14 +54,17 @@ if ($error === '' && mb_strlen($city) > CustomerClass::MAX_CITY) {
     $error = 'City must be ' . CustomerClass::MAX_CITY . ' characters or fewer.';
 }
 
-if ($error === '' && mb_strlen($contact) > CustomerClass::MAX_CONTACT) {
-    $error = 'Contact number must be ' . CustomerClass::MAX_CONTACT . ' characters or fewer.';
+if ($error === '') {
+    $error = Validator::checkPhone($contact, $country, CustomerClass::MAX_CONTACT) ?? '';
 }
 
-// Minimum viable password length. Cheap, and it genuinely helps.
-if ($error === '' && strlen($pass) < 6) {
-    $error = 'Password must be at least 6 characters.';
+// Full strength rules, not just a length.
+// leading and trailing spaces are legal password characters.
+if ($error === '') {
+    $error = Validator::checkPassword($pass, $email, $passConfirm) ?? '';
 }
+
+$storedContact = Validator::normalisePhone($contact, $country);
 
 if ($error !== '') {
  
@@ -75,7 +79,6 @@ if ($error !== '') {
     redirect('views/register.php');
 }
 
-// ---------- 4. Controller, then redirect ----------
 $controller = new CustomerController();
 
 $result = $controller->register([
@@ -84,14 +87,13 @@ $result = $controller->register([
     'pass'    => $pass,
     'country' => $country,
     'city'    => $city,
-    'contact' => $contact,
+    'contact' => $storedContact,
 ]);
 
 if ($result['success']) {
     $customer = $result['customer'];
 
-    // A brand-new session id the moment privileges change, so a session
-    // ID planted before sign-up cannot be reused afterwards.
+    // A brand-new session id the moment privileges change, so a session.
 
     session_regenerate_id(true);
 
@@ -107,7 +109,6 @@ if ($result['success']) {
     redirect('views/account/my_account.php');
 }
 
-// Failed - the reason is one of ours, never a raw mysqli message.
 $_SESSION['old'] = [
     'customer_name'    => $name,
     'customer_email'   => $email,
