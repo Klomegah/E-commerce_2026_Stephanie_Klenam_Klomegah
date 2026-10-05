@@ -13,17 +13,18 @@ date_default_timezone_set('Africa/Accra');
 ob_start();
 
 
-$document_root = realpath($_SERVER['DOCUMENT_ROOT'] ?? '');
-$application_root = realpath(__DIR__ . '/..');
+$script_name = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+$application_marker = '/Standard_Lab/shoppn';
+$marker_position = strpos($script_name, $application_marker);
 
-if ($document_root === false || $application_root === false
-    || strpos($application_root, $document_root) !== 0) {
-    error_log('Unable to determine the application URL from the Apache document root.');
+if ($marker_position === false) {
+    error_log('Unable to determine the application URL from the request path.');
     define('BASE_URL', '/');
 } else {
-    $application_path = substr($application_root, strlen($document_root));
-    $application_path = str_replace(DIRECTORY_SEPARATOR, '/', $application_path);
-    define('BASE_URL', '/' . trim($application_path, '/') . '/');
+    define(
+        'BASE_URL',
+        substr($script_name, 0, $marker_position + strlen($application_marker)) . '/'
+    );
 }
 
 
