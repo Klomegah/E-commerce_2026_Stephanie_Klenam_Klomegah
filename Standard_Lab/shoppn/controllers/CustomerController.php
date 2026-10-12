@@ -83,4 +83,85 @@ class CustomerController
     {
         return $this->customer->getCustomerById($id);
     }
+
+    /**
+     * Save edited profile details.
+     */
+    public function updateProfile($id, $data)
+    {
+        // The address must be free for everyone except this own account.
+        if ($this->customer->emailExistsExcept($data['email'], $id)) {
+            return ['success' => false, 'error' => 'That email is already used by another account.'];
+        }
+
+        $ok = $this->customer->updateCustomer(
+            $id,
+            $data['name'],
+            $data['email'],
+            $data['country'],
+            $data['city'],
+            $data['contact']
+        );
+
+        if (!$ok) {
+            return ['success' => false, 'error' => 'Could not save your details. Please try again.'];
+        }
+
+        return ['success' => true];
+    }
+
+    /**
+     * Change a password, but only after proving the current one.
+     * Re-entering the old password stops a stolen session (or an unlocked
+     * laptop) from locking the real owner out of their own account.
+     */
+    public function changePassword($id, $current, $new)
+    {
+        $row = $this->customer->getCustomerById($id);
+
+        if ($row === null) {
+            return ['success' => false, 'error' => 'Your account could not be found.'];
+        }
+
+        if (!password_verify($current, $row['customer_pass'])) {
+            return ['success' => false, 'error' => 'Your current password is not correct.'];
+        }
+
+        $hash = password_hash($new, PASSWORD_BCRYPT);
+
+        if (!$this->customer->updatePassword($id, $hash)) {
+            return ['success' => false, 'error' => 'Could not change your password. Please try again.'];
+        }
+
+        return ['success' => true];
+    }
+
+    /**
+     * Delete the signed-in account. Again the password must be re-entered.
+     */
+    public function deleteAccount($id, $password)
+    {
+        $row = $this->customer->getCustomerById($id);
+
+        if ($row === null) {
+            return ['success' => false, 'error' => 'Your account could not be found.'];
+        }
+
+        if (!password_verify($password, $row['customer_pass'])) {
+            return ['success' => false, 'error' => 'Your password is not correct.'];
+        }
+
+        if (!$this->customer->deleteCustomer($id)) {
+            if ($this->customer->lastError === 'in_use') {
+                return [
+                    'success' => false,
+                    'error'   => 'This account has orders on record, so it cannot be deleted. Please contact support.',
+                ];
+            }
+
+            return ['success' => false, 'error' => 'Could not delete your account. Please try again.'];
+        }
+
+        return ['success' => true];
+    }
 }

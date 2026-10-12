@@ -12,6 +12,10 @@ class ProductClass extends Database
 /* MySQL's error number for "duplicate key value violates a unique constraint". */
     const ERR_DUPLICATE_KEY = 1062;
 
+/* MySQL errno 1451: cannot delete a parent row while a child still
+   references it (products.cat/brand, orderdetails.product are RESTRICT). */
+    const ERR_ROW_REFERENCED = 1451;
+
     const MAX_BRAND_NAME    = 100;
     const MAX_CATEGORY_NAME = 100;
     const MAX_TITLE         = 200;
@@ -354,6 +358,23 @@ class ProductClass extends Database
     }
 
 /**
+ * Random pick for the home page. LIMIT is cast, never bound, because
+ * MySQL will not accept a placeholder there.
+ *
+ * @return array list of rows
+ */
+    public function getFeaturedProducts($limit = 6)
+    {
+        $limit = max(1, (int) $limit);
+
+        $sql = self::PRODUCT_SELECT . ' ORDER BY RAND() LIMIT ' . $limit;
+
+        $result = $this->conn->query($sql);
+
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+/**
  * @param string $column  'product_cat' or 'product_brand'
  * @param int    $id
  * @return array list of rows
@@ -380,5 +401,80 @@ class ProductClass extends Database
     public function getProductsByBrand($brandId)
     {
         return $this->getProductsWhereColumn('product_brand', (int) $brandId);
+    }
+
+/**
+ * Delete one product. Blocked by orderdetails.product_id (RESTRICT), so a
+ * product that appears on an order cannot vanish out from under it.
+ */
+    public function deleteProduct($id)
+    {
+        $stmt = $this->conn->prepare(
+            "DELETE FROM products WHERE product_id = ?"
+        );
+
+        $stmt->bind_param('i', $id);
+
+        return $this->runDelete($stmt);
+    }
+
+/* A brand still used by any product is blocked by products.product_brand. */
+    public function deleteBrand($id)
+    {
+        $stmt = $this->conn->prepare(
+            "DELETE FROM brands WHERE brand_id = ?"
+        );
+
+        $stmt->bind_param('i', $id);
+
+        return $this->runDelete($stmt);
+    }
+
+/* A category still used by any product is blocked by products.product_cat. */
+    public function deleteCategory($id)
+    {
+        $stmt = $this->conn->prepare(
+            "DELETE FROM categories WHERE cat_id = ?"
+        );
+
+        $stmt->bind_param('i', $id);
+
+        return $this->runDelete($stmt);
+    }
+
+/* The delete twin of runWrite(): translate errno 1451 to lastError='in_use'. */
+    private function runDelete($stmt)
+    {
+        $this->lastError = null;
+
+        try {
+            $ok = $stmt->execute();
+        } catch (mysqli_sql_exception $e) {
+            if ((int) $e->getCode() === self::ERR_ROW_REFERENCED) {
+                $this->lastError = 'in_use';
+            } else {
+                error_log('Product delete failed: ' . $e->getMessage());
+            }
+
+            $stmt->close();
+
+            return false;
+        }
+
+        if (!$ok) {
+            if ($stmt->errno === self::ERR_ROW_REFERENCED) {
+                $this->lastError = 'in_use';
+            } else {
+                error_log('Product delete failed: ' . $stmt->error);
+            }
+
+            $stmt->close();
+
+            return false;
+        }
+
+        $stmt->close();
+
+        return true;
     }
 }

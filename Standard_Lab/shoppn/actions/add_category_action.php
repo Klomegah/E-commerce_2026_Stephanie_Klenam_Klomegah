@@ -15,6 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 
+if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+    $_SESSION['error'] = 'Your session expired. Please try again.';
+    redirect('views/admin/category.php');
+}
+
 $name = trim(strip_tags($_POST['cat_name'] ?? ''));
 
 

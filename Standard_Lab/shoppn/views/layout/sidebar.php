@@ -11,25 +11,29 @@
 
 
 
+// Names are prefixed with "side" on purpose: this file is require()d into
+// the same scope as the view, so a generic $brand/$categories would
+// overwrite the view's own variables.
 require_once __DIR__ . '/../../controllers/ProductController.php';
 
-$productController = new ProductController();
-$categories = $productController->getCategories();
-$brands     = $productController->getBrands();
+$sideProductController = new ProductController();
+$sideCategories = $sideProductController->getCategories();
+$sideBrands     = $sideProductController->getBrands();
 
 ?>
 
 <aside class="sidebar">
     <section>
         <h3>Categories</h3>
-        <?php if (empty($categories)): ?>
+        <?php if (empty($sideCategories)): ?>
             <p class="muted">No categories yet.</p>
         <?php else: ?>
             <ul>
-                <?php foreach ($categories as $cat): ?>
+                <?php foreach ($sideCategories as $sideCat): ?>
                     <li>
-                        <a href="<?= BASE_URL ?>views/all_products.php?cat=<?= (int) $cat['cat_id'] ?>">
-                            <?= htmlspecialchars($cat['cat_name']) ?>
+                        <!-- Home reads ?cat=N and switches to that listing. -->
+                        <a href="<?= BASE_URL ?>index.php?cat=<?= (int) $sideCat['cat_id'] ?>">
+                            <?= htmlspecialchars($sideCat['cat_name']) ?>
                         </a>
                     </li>
                 <?php endforeach; ?>
@@ -39,14 +43,14 @@ $brands     = $productController->getBrands();
 
     <section>
         <h3>Brands</h3>
-        <?php if (empty($brands)): ?>
+        <?php if (empty($sideBrands)): ?>
             <p class="muted">No brands yet.</p>
         <?php else: ?>
             <ul>
-                <?php foreach ($brands as $brand): ?>
+                <?php foreach ($sideBrands as $sideBrand): ?>
                     <li>
-                        <a href="<?= BASE_URL ?>views/all_products.php?brand=<?= (int) $brand['brand_id'] ?>">
-                            <?= htmlspecialchars($brand['brand_name']) ?>
+                        <a href="<?= BASE_URL ?>index.php?brand=<?= (int) $sideBrand['brand_id'] ?>">
+                            <?= htmlspecialchars($sideBrand['brand_name']) ?>
                         </a>
                     </li>
                 <?php endforeach; ?>

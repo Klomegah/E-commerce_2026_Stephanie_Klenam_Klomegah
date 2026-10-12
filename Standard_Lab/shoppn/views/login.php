@@ -30,6 +30,8 @@ require_once __DIR__ . '/layout/header.php';
 
         <form action="<?= BASE_URL ?>actions/login_action.php" method="POST" id="login-form" novalidate>
 
+            <?= csrf_field() ?>
+
             <div class="form-row">
                 <label for="customer_email">Email</label>
                 <input type="email" id="customer_email" name="customer_email"

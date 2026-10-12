@@ -311,6 +311,70 @@ a:hover { text-decoration: underline; }
 .btn:hover { background: var(--brand-dark); text-decoration: none; }
 .btn:disabled { background: var(--muted); cursor: not-allowed; }
 
+/* Destructive actions (delete account/product/brand/category). */
+.btn-danger { background: #c0392b; }
+.btn-danger:hover { background: #962d22; text-decoration: none; }
+
+/* A muted "no" button, e.g. the Cancel in a confirm dialog. */
+.btn-cancel { background: #e9edf2; color: #333; }
+.btn-cancel:hover { background: #d7dde5; text-decoration: none; }
+
+/* Compact buttons for table rows. */
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.82rem; }
+
+/* Edit + Delete kept on one neat line inside a table cell. */
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.row-actions form { margin: 0; }
+
+/* ---------- Styled confirm dialog (js/confirm.js) ---------- */
+
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 24, 32, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 1000;
+}
+
+/* The [hidden] attribute must win over display:flex. */
+.confirm-overlay[hidden] { display: none; }
+
+.confirm-dialog {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.confirm-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    color: #1f2733;
+}
+
+.confirm-message {
+    margin: 0 0 1.25rem;
+    color: #4a5563;
+    line-height: 1.45;
+}
+
+.confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
 /* ---------- Messages ---------- */
 
 .alert {
@@ -421,6 +485,61 @@ a:hover { text-decoration: underline; }
 .product-card h4 { margin: 0 0 0.35rem; font-size: 0.98rem; }
 .product-card .price { color: var(--brand); font-weight: 700; }
 .product-card .meta { color: var(--muted); font-size: 0.82rem; margin-bottom: 0.35rem; }
+
+/* Details + Add to Cart sit side by side and wrap on narrow cards. */
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+}
+
+.card-actions .btn { padding: 0.35rem 0.7rem; font-size: 0.82rem; }
+
+/* Photo on the single-product page. Contains rather than crops, so the
+   whole product is visible. */
+.product-hero {
+    display: block;
+    max-width: 100%;
+    max-height: 420px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #f4f6f9;
+}
+
+/* Brand + category line and description on the single-product page. */
+.product-meta {
+    margin: 0.2rem 0 1rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+}
+
+.product-meta a {
+    color: var(--brand);
+    font-weight: 600;
+}
+
+.product-meta-label { font-weight: 600; color: #333; }
+.product-meta-sep { margin: 0 0.5rem; }
+
+.product-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--brand);
+    margin: 0.25rem 0 1rem;
+}
+
+.product-description {
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.product-description h2 { margin: 0 0 0.5rem; font-size: 1.15rem; }
 
 /* ---------- Footer ---------- */
 

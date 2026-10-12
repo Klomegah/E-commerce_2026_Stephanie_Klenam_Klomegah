@@ -41,6 +41,8 @@
         actions/add_product_action.php.
     -->
     <script src="<?= BASE_URL ?>js/admin.js?v=<?= $asset_v('js/admin.js') ?>" defer></script>
+    <!-- Styled confirm dialog for destructive forms (data-confirm). -->
+    <script src="<?= BASE_URL ?>js/confirm.js?v=<?= $asset_v('js/confirm.js') ?>" defer></script>
 </head>
 <body>
 
@@ -50,7 +52,7 @@
         <a href="<?= BASE_URL ?>" class="logo">Shoppn</a>
 
         <form action="<?= BASE_URL ?>views/search_results.php" method="GET" class="search-box">
-            <input type="text" name="q" placeholder="Search products..." aria-label="Search products">
+            <input type="text" name="user_query" placeholder="Search products..." aria-label="Search products">
             <button type="submit">Search</button>
         </form>
 

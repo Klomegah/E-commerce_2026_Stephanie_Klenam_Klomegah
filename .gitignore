@@ -29,3 +29,4 @@ Standard_Lab/shoppn/error/*.log
 Standard_Lab/shoppn/images/products/*
 !Standard_Lab/shoppn/images/products/.gitkeep
 !Standard_Lab/shoppn/images/products/6ac2c90012a3b.png
+make_hash.php

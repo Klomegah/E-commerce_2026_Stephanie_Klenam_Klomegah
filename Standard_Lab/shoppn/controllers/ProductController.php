@@ -306,6 +306,11 @@ class ProductController
         return $this->product->getLatestProducts($limit);
     }
 
+    public function getFeaturedProducts($limit = 6)
+    {
+        return $this->product->getFeaturedProducts($limit);
+    }
+
     public function getProductsByCategory($catId)
     {
         if (!is_numeric($catId) || (int) $catId < 1) {
@@ -331,5 +336,82 @@ class ProductController
         }
 
         return $this->product->getProductById((int) $id);
+    }
+
+/**
+ * Delete a product. Returns a readable error when the row is referenced by
+ * an order rather than letting the raw SQL error reach the admin.
+ */
+    public function deleteProduct($id)
+    {
+        if (!is_numeric($id) || (int) $id < 1) {
+            return ['success' => false, 'error' => 'Invalid product id.'];
+        }
+
+        $id = (int) $id;
+
+        if ($this->product->getProductById($id) === null) {
+            return ['success' => false, 'error' => 'That product no longer exists.'];
+        }
+
+        if (!$this->product->deleteProduct($id)) {
+            return ['success' => false, 'error' => $this->deleteError(
+                'This product is part of an existing order and cannot be deleted.'
+            )];
+        }
+
+        return ['success' => true];
+    }
+
+    public function deleteBrand($id)
+    {
+        if (!is_numeric($id) || (int) $id < 1) {
+            return ['success' => false, 'error' => 'Invalid brand id.'];
+        }
+
+        $id = (int) $id;
+
+        if ($this->product->getBrandById($id) === null) {
+            return ['success' => false, 'error' => 'That brand no longer exists.'];
+        }
+
+        if (!$this->product->deleteBrand($id)) {
+            return ['success' => false, 'error' => $this->deleteError(
+                'This brand is used by one or more products and cannot be deleted.'
+            )];
+        }
+
+        return ['success' => true];
+    }
+
+    public function deleteCategory($id)
+    {
+        if (!is_numeric($id) || (int) $id < 1) {
+            return ['success' => false, 'error' => 'Invalid category id.'];
+        }
+
+        $id = (int) $id;
+
+        if ($this->product->getCategoryById($id) === null) {
+            return ['success' => false, 'error' => 'That category no longer exists.'];
+        }
+
+        if (!$this->product->deleteCategory($id)) {
+            return ['success' => false, 'error' => $this->deleteError(
+                'This category is used by one or more products and cannot be deleted.'
+            )];
+        }
+
+        return ['success' => true];
+    }
+
+/* 'in_use' means the foreign key blocked us; anything else is a real fault. */
+    private function deleteError($inUseMessage)
+    {
+        if ($this->product->lastError === 'in_use') {
+            return $inUseMessage;
+        }
+
+        return 'Could not delete. Please try again.';
     }
 }

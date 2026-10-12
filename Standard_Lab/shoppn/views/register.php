@@ -76,6 +76,8 @@ require_once __DIR__ . '/layout/header.php';
               ], JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8') ?>"
               novalidate>
 
+            <?= csrf_field() ?>
+
             <div class="form-row">
                 <label for="customer_name">Full Name</label>
 

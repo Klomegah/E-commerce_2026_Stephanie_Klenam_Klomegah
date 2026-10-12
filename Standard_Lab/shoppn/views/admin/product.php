@@ -106,6 +106,8 @@ require_once __DIR__ . '/../layout/header.php';
         <form action="<?= BASE_URL ?>actions/<?= $isEditMode ? 'update_product_action.php' : 'add_product_action.php' ?>"
               method="POST" enctype="multipart/form-data" id="product-form">
 
+            <?= csrf_field() ?>
+
             <?php if ($isEditMode): ?>
                 <input type="hidden" name="product_id" value="<?= (int) $editId ?>">
 
@@ -228,10 +230,22 @@ require_once __DIR__ . '/../layout/header.php';
                         <td><?= htmlspecialchars($row['brand_name'] ?? '') ?></td>
                         <td><?= number_format((float) $row['product_price'], 2) ?></td>
                         <td>
-                            <a class="btn"
-                               href="<?= BASE_URL ?>views/admin/product.php?edit_id=<?= (int) $row['product_id'] ?>">
-                                Edit
-                            </a>
+                            <div class="row-actions">
+                                <a class="btn btn-sm"
+                                   href="<?= BASE_URL ?>views/admin/product.php?edit_id=<?= (int) $row['product_id'] ?>">
+                                    Edit
+                                </a>
+                                <!-- Delete is a POST form, not a link: a link
+                                     would let a crawler or prefetch wipe rows. -->
+                                <form action="<?= BASE_URL ?>actions/delete_product_action.php"
+                                      method="POST"
+                                      data-confirm="Delete this product? This cannot be undone."
+                                      data-confirm-label="Delete product">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="product_id" value="<?= (int) $row['product_id'] ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

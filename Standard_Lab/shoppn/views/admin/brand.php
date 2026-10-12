@@ -69,6 +69,8 @@ require_once __DIR__ . '/../layout/header.php';
         <form action="<?= BASE_URL ?>actions/<?= $isEditMode ? 'update_brand_action.php' : 'add_brand_action.php' ?>"
               method="POST">
 
+            <?= csrf_field() ?>
+
             <?php if ($isEditMode): ?>
                 <input type="hidden" name="brand_id" value="<?= (int) $editId ?>">
             <?php endif; ?>
@@ -101,13 +103,23 @@ require_once __DIR__ . '/../layout/header.php';
                         <td><?= (int) $brand['brand_id'] ?></td>
                         <td><?= htmlspecialchars($brand['brand_name']) ?></td>
                         <td>
-                            <!-- A link, not a form: clicking it is a GET,
-                                 so the View just re-renders with the form
-                                 pre-filled. -->
-                            <a class="btn"
-                               href="<?= BASE_URL ?>views/admin/brand.php?edit_id=<?= (int) $brand['brand_id'] ?>">
-                                Edit
-                            </a>
+                            <div class="row-actions">
+                                <!-- A link, not a form: clicking it is a GET,
+                                     so the View just re-renders with the form
+                                     pre-filled. -->
+                                <a class="btn btn-sm"
+                                   href="<?= BASE_URL ?>views/admin/brand.php?edit_id=<?= (int) $brand['brand_id'] ?>">
+                                    Edit
+                                </a>
+                                <form action="<?= BASE_URL ?>actions/delete_brand_action.php"
+                                      method="POST"
+                                      data-confirm="Delete this brand? This cannot be undone."
+                                      data-confirm-label="Delete brand">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="brand_id" value="<?= (int) $brand['brand_id'] ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

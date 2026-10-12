@@ -13,6 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('views/login.php');
 }
 
+// ---------- 1b. CSRF ----------
+if (!csrf_verify($_POST['csrf_token'] ?? '')) {
+    $_SESSION['error'] = 'Your session expired. Please try again.';
+    redirect('views/login.php');
+}
+
 // ---------- 2. Sanitise ----------
 $email = trim(strip_tags($_POST['customer_email'] ?? ''));
 $pass  = $_POST['customer_pass'] ?? '';

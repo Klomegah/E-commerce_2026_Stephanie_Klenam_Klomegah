@@ -5,6 +5,7 @@
  *
  */
 
+
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
 
@@ -15,6 +16,10 @@ $page_title = 'My Account';
 $customerController = new CustomerController();
 $customer = $customerController->getCustomerById(core_get_user_id());
 
+$success = $_SESSION['success'] ?? null;
+$error   = $_SESSION['error'] ?? null;
+unset($_SESSION['success'], $_SESSION['error']);
+
 require_once __DIR__ . '/../layout/header.php';
 ?>
 
@@ -24,6 +29,14 @@ require_once __DIR__ . '/../layout/header.php';
 
     <main class="main-content">
         <h1>My Account</h1>
+
+        <?php if ($success !== null): ?>
+            <div class="notice"><?= htmlspecialchars($success) ?></div>
+        <?php endif; ?>
+
+        <?php if ($error !== null): ?>
+            <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
         <?php if ($customer): ?>
             <table class="detail-table">
@@ -59,6 +72,10 @@ require_once __DIR__ . '/../layout/header.php';
 
             <p>
                 <a class="btn" href="<?= BASE_URL ?>views/account/edit_account.php">Edit details</a>
+                <a class="btn" href="<?= BASE_URL ?>views/account/change_pass.php">Change password</a>
+                <?php if (!is_admin()): ?>
+                    <a class="btn btn-danger" href="<?= BASE_URL ?>views/account/delete_account.php">Delete account</a>
+                <?php endif; ?>
                 <a class="btn" href="<?= BASE_URL ?>logout.php">Logout</a>
             </p>
         <?php else: ?>

@@ -66,6 +66,8 @@ require_once __DIR__ . '/../layout/header.php';
         <form action="<?= BASE_URL ?>actions/<?= $isEditMode ? 'update_category_action.php' : 'add_category_action.php' ?>"
               method="POST">
 
+            <?= csrf_field() ?>
+
             <?php if ($isEditMode): ?>
                 <input type="hidden" name="cat_id" value="<?= (int) $editId ?>">
             <?php endif; ?>
@@ -98,10 +100,20 @@ require_once __DIR__ . '/../layout/header.php';
                         <td><?= (int) $category['cat_id'] ?></td>
                         <td><?= htmlspecialchars($category['cat_name']) ?></td>
                         <td>
-                            <a class="btn"
-                               href="<?= BASE_URL ?>views/admin/category.php?edit_id=<?= (int) $category['cat_id'] ?>">
-                                Edit
-                            </a>
+                            <div class="row-actions">
+                                <a class="btn btn-sm"
+                                   href="<?= BASE_URL ?>views/admin/category.php?edit_id=<?= (int) $category['cat_id'] ?>">
+                                    Edit
+                                </a>
+                                <form action="<?= BASE_URL ?>actions/delete_category_action.php"
+                                      method="POST"
+                                      data-confirm="Delete this category? This cannot be undone."
+                                      data-confirm-label="Delete category">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="cat_id" value="<?= (int) $category['cat_id'] ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>

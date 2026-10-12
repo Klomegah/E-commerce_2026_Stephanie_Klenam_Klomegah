@@ -7,7 +7,7 @@ $page_title = 'Search results';
 
 $products = [];
 $error    = null;
-$term     = isset($_GET['q']) ? trim($_GET['q']) : '';
+$term     = isset($_GET['user_query']) ? trim($_GET['user_query']) : '';
 
 if ($term !== '') {
     $result = (new ProductController())->search($term);
@@ -43,19 +43,10 @@ require_once __DIR__ . '/layout/header.php';
                 &ldquo;<?= htmlspecialchars($term) ?>&rdquo;.
             </p>
 
+            <!-- Same card as the home page, so results look consistent. -->
             <div class="product-grid">
                 <?php foreach ($products as $product): ?>
-                    <div class="product-card">
-                        <h4><?= htmlspecialchars($product['product_title']) ?></h4>
-                        <div class="meta">
-                            <?= htmlspecialchars($product['cat_name'] ?? 'Uncategorised') ?>
-                            &middot;
-                            <?= htmlspecialchars($product['brand_name'] ?? 'No brand') ?>
-                        </div>
-                        <div class="price">
-                            GH&cent; <?= number_format((float) $product['product_price'], 2) ?>
-                        </div>
-                    </div>
+                    <?php require __DIR__ . '/partials/product_card.php'; ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
