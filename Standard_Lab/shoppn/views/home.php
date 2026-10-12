@@ -31,8 +31,8 @@ if ($catId !== '' && is_numeric($catId) && (int) $catId > 0) {
 } else {
     $products = $productController->getFeaturedProducts(6);
 }
+
 ?>
-<h1>Shoppn</h1>
 
 <h2><?= htmlspecialchars($heading) ?></h2>
 
