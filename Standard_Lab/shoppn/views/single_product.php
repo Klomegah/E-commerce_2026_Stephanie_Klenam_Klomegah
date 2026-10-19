@@ -88,7 +88,7 @@ require_once __DIR__ . '/layout/header.php';
 
         <p>
             <a class="btn"
-               href="<?= BASE_URL ?>index.php?add_cart=<?= (int) $product['product_id'] ?>">Add to Cart</a>
+               href="<?= BASE_URL ?>actions/add_to_cart_action.php?add_cart=<?= (int) $product['product_id'] ?>">Add to Cart</a>
             <a class="btn" href="<?= BASE_URL ?>views/all_products.php">Back to products</a>
         </p>
     </main>

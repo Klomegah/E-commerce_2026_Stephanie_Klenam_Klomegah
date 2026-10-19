@@ -1,4 +1,27 @@
 <?php
+
+/* views/layout/header.php - included at the top of every page, so it is
+   also where the two "always visible" pieces of cart UI live:
+
+   1. FLASH BAR. Actions communicate by setting $_SESSION['success'] /
+      ['notice'] / ['error'] and redirecting. Pages that want the message
+      inside their own content (login, register, my_account, the cart
+      page...) read and clear these BEFORE including this file, so they
+      are already gone by now - no page ever shows a message twice. Pages
+      that never read them (home, product listings, single product) get
+      the message here instead.
+   2. CART SUMMARY. Count + total for THIS visitor's IP, on every page. */
+
+require_once __DIR__ . '/../../controllers/CartController.php';
+
+$flash_success = $_SESSION['success'] ?? null;
+$flash_notice  = $_SESSION['notice'] ?? null;
+$flash_error   = $_SESSION['error'] ?? null;
+unset($_SESSION['success'], $_SESSION['notice'], $_SESSION['error']);
+
+$cartController = new CartController();
+$cart_items     = $cartController->getCartCount(get_ip());
+$cart_price     = $cartController->getCartTotal(get_ip());
 ?>
 
     
@@ -57,6 +80,22 @@
         </form>
 
         <nav class="site-nav">
+            <!--
+                The cart summary, per the spec: "Shopping Cart - Total
+                Items: N | Total Price: $X | Go to Cart". It is a link, not
+                just text, so the whole bar is one click to the cart. The
+                currency matches the rest of the shop (GH cedis), and the
+                count/total are for THIS visitor's IP, so they are correct
+                for guests too.
+            -->
+            <a href="<?= BASE_URL ?>views/cart.php" class="cart-summary"
+               title="Go to your shopping cart">
+                Shopping Cart &mdash;
+                Total Items: <strong><?= $cart_items ?></strong> |
+                Total Price: <strong>GH&cent; <?= number_format($cart_price, 2) ?></strong> |
+                Go to Cart
+            </a>
+
             <?php if (is_logged_in()): ?>
                 <span class="welcome">
                     Welcome, <?= htmlspecialchars($_SESSION['customer_name'] ?? 'User') ?>
@@ -88,3 +127,21 @@
 
     </div>
 </header>
+
+<?php if ($flash_success !== null || $flash_notice !== null || $flash_error !== null): ?>
+    <!-- role="status" makes screen readers announce the message without
+         stealing focus; the error variant adds role="alert" for urgency. -->
+    <div class="flash-wrap" role="status" aria-live="polite">
+        <?php if ($flash_success !== null): ?>
+            <div class="notice"><?= htmlspecialchars($flash_success) ?></div>
+        <?php endif; ?>
+
+        <?php if ($flash_notice !== null): ?>
+            <div class="notice"><?= htmlspecialchars($flash_notice) ?></div>
+        <?php endif; ?>
+
+        <?php if ($flash_error !== null): ?>
+            <div class="alert alert-error" role="alert"><?= htmlspecialchars($flash_error) ?></div>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>

@@ -41,8 +41,13 @@ $card_brand = (string) ($product['brand_name'] ?? '');
     <div class="card-actions">
         <a class="btn"
            href="<?= BASE_URL ?>views/single_product.php?pro_id=<?= $card_id ?>">Details</a>
-        <!-- Cart is a later task; the link is here so the flow is complete. -->
+        <!--
+            A plain GET link, matching the original add_cart pattern:
+            actions/add_to_cart_action.php reads ?add_cart=N, checks the
+            product exists, refuses duplicates, then sends the visitor
+            back to whatever page this link was clicked from.
+        -->
         <a class="btn"
-           href="<?= BASE_URL ?>index.php?add_cart=<?= $card_id ?>">Add to Cart</a>
+           href="<?= BASE_URL ?>actions/add_to_cart_action.php?add_cart=<?= $card_id ?>">Add to Cart</a>
     </div>
 </div>
