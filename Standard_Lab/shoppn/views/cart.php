@@ -14,6 +14,11 @@
  * updating happen in the three action files, each of which redirects
  * back here when it is done (the Post/Redirect/Get pattern, so a refresh
  * never asks to re-submit).
+ *
+ * Admins are redirected away from the cart page: management mode is not
+ * a shopping mode, and it keeps accidental checkout impossible in Task
+ * 13 without locking the underlying action handlers (which would break
+ * guest carry-over behaviour).
  */
 
 require_once __DIR__ . '/../core/core.php';
@@ -22,6 +27,12 @@ require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../classes/ProductClass.php';
 
 $page_title = 'Shopping Cart';
+
+// Gate: admins should not access the customer cart.
+if (is_admin()) {
+    $_SESSION['error'] = 'Admins do not use the shopping cart. Please use the admin area.';
+    redirect('views/admin/product.php');
+}
 
 $cartController = new CartController();
 $ip = get_ip();

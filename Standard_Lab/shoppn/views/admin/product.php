@@ -36,29 +36,41 @@ $isEditMode = ($editId !== null);
 
 $old = $_SESSION['old'] ?? [];
 
-function product_field($key, $edit, $old, $default = '')
+// Read the flashes FIRST: after a failed save they decide which values
+// fill the form (see product_field() below).
+$success = $_SESSION['success'] ?? null;
+$error   = $_SESSION['error'] ?? null;
+
+/**
+ * Which value fills one form field.
+ *
+ * Normally the SAVED row ($edit) wins, so a fresh edit shows the
+ * database. But after a FAILED save the admin's typed input ($old) must
+ * win - otherwise the error page would silently discard what they just
+ * wrote. The update Action signals that case simply by arriving with an
+ * error; no extra flag is needed.
+ */
+function product_field($key, $edit, $old, $prefer_old = false)
 {
+    if ($prefer_old && isset($old[$key])) {
+        return (string) $old[$key];
+    }
+
     if ($edit !== null && isset($edit[$key])) {
         return (string) $edit[$key];
     }
 
-    if (isset($old[$key])) {
-        return (string) $old[$key];
-    }
-
-    return $default;
+    return isset($old[$key]) ? (string) $old[$key] : '';
 }
 
-$value_title    = product_field('product_title', $edit, $old);
-$value_cat      = product_field('product_cat', $edit, $old);
-$value_brand    = product_field('product_brand', $edit, $old);
-$value_price    = product_field('product_price', $edit, $old);
-$value_desc     = product_field('product_desc', $edit, $old);
-$value_keywords = product_field('product_keywords', $edit, $old);
+$prefer_old = ($error !== null);
 
-
-$success = $_SESSION['success'] ?? null;
-$error   = $_SESSION['error'] ?? null;
+$value_title    = product_field('product_title', $edit, $old, $prefer_old);
+$value_cat      = product_field('product_cat', $edit, $old, $prefer_old);
+$value_brand    = product_field('product_brand', $edit, $old, $prefer_old);
+$value_price    = product_field('product_price', $edit, $old, $prefer_old);
+$value_desc     = product_field('product_desc', $edit, $old, $prefer_old);
+$value_keywords = product_field('product_keywords', $edit, $old, $prefer_old);
 unset($_SESSION['success'], $_SESSION['error'], $_SESSION['old']);
 
 

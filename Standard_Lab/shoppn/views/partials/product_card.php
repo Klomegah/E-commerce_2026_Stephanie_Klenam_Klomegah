@@ -47,7 +47,9 @@ $card_brand = (string) ($product['brand_name'] ?? '');
             product exists, refuses duplicates, then sends the visitor
             back to whatever page this link was clicked from.
         -->
+        <?php if (!is_admin()): ?>
         <a class="btn"
            href="<?= BASE_URL ?>actions/add_to_cart_action.php?add_cart=<?= $card_id ?>">Add to Cart</a>
+        <?php endif; ?>
     </div>
 </div>

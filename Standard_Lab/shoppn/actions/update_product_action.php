@@ -42,10 +42,19 @@ $_SESSION['old'] = [
     'product_keywords' => $keywords,
 ];
 
-function product_form_error($message)
+function product_form_error($message, $edit_id = null)
 {
     $_SESSION['error'] = $message;
-    redirect('views/admin/product.php');
+
+    // With an id, the admin lands back on the SAME edit page. A failed
+    // save must not throw them out of edit mode into "Add a product".
+    $url = 'views/admin/product.php';
+
+    if ($edit_id !== null) {
+        $url .= '?edit_id=' . (int) $edit_id;
+    }
+
+    redirect($url);
 }
 
 
@@ -68,29 +77,30 @@ if ($new_upload) {
     $file = $_FILES['product_image'];
 
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        product_form_error('The image could not be uploaded (error code ' . (int) $file['error'] . ').');
+        product_form_error('The image could not be uploaded (error code ' . (int) $file['error'] . ').', $id);
     }
 
     // The same checks as the add Action, in the same order: upload.
     if ($file['size'] <= 0 || $file['size'] > ProductClass::MAX_IMAGE_BYTES) {
         product_form_error(
-            'Image must be smaller than ' . (ProductClass::MAX_IMAGE_BYTES / 1048576) . ' MB.'
+            'Image must be smaller than ' . (ProductClass::MAX_IMAGE_BYTES / 1048576) . ' MB.',
+            $id
         );
     }
 
     if (!in_array($file['type'], $allowed, true)) {
-        product_form_error('Image must be a JPEG, PNG, GIF or WEBP file.');
+        product_form_error('Image must be a JPEG, PNG, GIF or WEBP file.', $id);
     }
 
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $realType = $finfo->file($file['tmp_name']);
 
     if ($realType === false || !in_array($realType, $allowed, true)) {
-        product_form_error('That file is not a valid image.');
+        product_form_error('That file is not a valid image.', $id);
     }
 
     if (getimagesize($file['tmp_name']) === false) {
-        product_form_error('That image appears to be damaged or is not a real image.');
+        product_form_error('That image appears to be damaged or is not a real image.', $id);
     }
 
     $extensions = [
@@ -101,7 +111,7 @@ if ($new_upload) {
     ];
 
     if (!isset($extensions[$realType])) {
-        product_form_error('That image format is not supported.');
+        product_form_error('That image format is not supported.', $id);
     }
 
     $new_type    = true;
@@ -110,13 +120,13 @@ if ($new_upload) {
 
     if (!move_uploaded_file($file['tmp_name'], $destination)) {
         error_log('Product image upload failed: ' . $file['tmp_name'] . ' -> ' . $destination);
-        product_form_error('The image could not be saved. Please try again.');
+        product_form_error('The image could not be saved. Please try again.', $id);
     }
 } else {
     $ext = strtolower(pathinfo($previous_image, PATHINFO_EXTENSION));
 
     if ($previous_image === '' || !in_array($ext, ProductClass::ALLOWED_IMAGE_EXTENSIONS, true)) {
-        product_form_error('Please choose a product image.');
+        product_form_error('Please choose a product image.', $id);
     }
 
     $filename = $previous_image;
@@ -141,5 +151,5 @@ if ($new_type && $destination !== '') {
     @unlink($destination);
 }
 
-$_SESSION['error'] = $result['error'];
-redirect('views/admin/product.php');
+// Database refusal also returns to edit mode, same reason as above.
+product_form_error($result['error'], $id);

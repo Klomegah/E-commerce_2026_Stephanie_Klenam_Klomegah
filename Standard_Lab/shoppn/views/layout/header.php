@@ -87,7 +87,12 @@ $cart_price     = $cartController->getCartTotal(get_ip());
                 currency matches the rest of the shop (GH cedis), and the
                 count/total are for THIS visitor's IP, so they are correct
                 for guests too.
+
+                Admins do not need the customer cart UI: hiding it prevents
+                accidentally ending up at the cart/checkout while in
+                management mode.
             -->
+            <?php if (!is_admin()): ?>
             <a href="<?= BASE_URL ?>views/cart.php" class="cart-summary"
                title="Go to your shopping cart">
                 Shopping Cart &mdash;
@@ -95,6 +100,7 @@ $cart_price     = $cartController->getCartTotal(get_ip());
                 Total Price: <strong>GH&cent; <?= number_format($cart_price, 2) ?></strong> |
                 Go to Cart
             </a>
+            <?php endif; ?>
 
             <?php if (is_logged_in()): ?>
                 <span class="welcome">
