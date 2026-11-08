@@ -9,14 +9,12 @@ class CartClass extends Database
 /* MySQL errno 1062 means a duplicate key. */
 
     const ERR_DUPLICATE_KEY = 1062;
-
-/* A sane ceiling on one line item. The number input in cart.php has a
-   matching max attribute, but that is only a browser hint - the real
-   check happens in CartController before anything reaches this class. */
     const MAX_QTY = 100;
 
+    
 /* Set by addToCart() when the INSERT is rejected by that UNIQUE index,
    so the Controller can turn a raw SQL failure into a readable sentence. */
+
     public $lastError = null;
 
 /**
@@ -170,8 +168,7 @@ class CartClass extends Database
         $customer_id = $customer_id === null ? null : (int) $customer_id;
         $amount      = (float) $amount;
 
-        // 1. Invoice number, per the spec. Six digits keeps it readable
-        //    on the invoice; the order_id is the true unique identity.
+        // 1. Invoice number, per the spec. 
         $invoice_no = mt_rand(100000, 999999);
         $order_date = date('Y-m-d');
         $created_at = date('Y-m-d H:i:s');
@@ -187,9 +184,7 @@ class CartClass extends Database
                 throw new RuntimeException('Amount does not match the cart total.');
             }
 
-            // 2. The order itself. order_status is set by US, not by the
-            //    browser: only this method reaches this line, and only
-            //    after server-side verification.
+            // 2. The order itself. order_status is set by 
             $stmt = $this->conn->prepare(
                 "INSERT INTO orders
                     (customer_id, invoice_no, order_date, order_status, created_at)
@@ -204,9 +199,7 @@ class CartClass extends Database
             $order_id = (int) $this->conn->insert_id;
             $stmt->close();
 
-            // 3. Copy every cart row in ONE statement. INSERT ... SELECT
-            //    keeps the copy atomic and avoids looping in PHP; cart's
-            //    p_id becomes orderdetails.product_id.
+            // 3. Copy every cart row in ONE statement. 
             $stmt = $this->conn->prepare(
                 "INSERT INTO orderdetails (order_id, product_id, qty)
                  SELECT ?, p_id, qty
@@ -228,7 +221,33 @@ class CartClass extends Database
                 throw new RuntimeException('Cart is empty; no order rows to copy.');
             }
 
-            // 4. Empty this visitor's cart. Scoped by ip_add, exactly like
+            // 4. Record the payment row required by the class schema. This
+            //    stays inside the transaction: an order without its payment
+            //    row would be incomplete.
+            $currency     = defined('PAYSTACK_CURRENCY') ? PAYSTACK_CURRENCY : 'GHS';
+            $payment_date = $order_date;
+
+            $stmt = $this->conn->prepare(
+                "INSERT INTO payment
+                    (amt, customer_id, order_id, currency, payment_date)
+                 VALUES (?, ?, ?, ?, ?)"
+            );
+            $stmt->bind_param(
+                'diiss',
+                $amount,
+                $customer_id,
+                $order_id,
+                $currency,
+                $payment_date
+            );
+
+            if (!$stmt->execute()) {
+                throw new RuntimeException('Could not record the payment.');
+            }
+
+            $stmt->close();
+
+            // 5. Empty this visitor's cart. Scoped by ip_add, exactly like
             //    the rest of the cart queries.
             $stmt = $this->conn->prepare(
                 "DELETE FROM cart WHERE ip_add = ?"
@@ -243,7 +262,7 @@ class CartClass extends Database
 
             $this->conn->commit();
 
-            // 5. The Action redirects to payment_success.php?order_id=N.
+            // 6. The Action redirects to payment_success.php?order_id=N.
             return $order_id;
         } catch (Throwable $e) {
             $this->conn->rollback();
