@@ -12,4 +12,3 @@ define('DB_HOST', 'localhost');
 define('DB_USER', 'database_username');
 define('DB_PASS', 'database_password');
 define('DB_NAME', 'shoppn');
-\
