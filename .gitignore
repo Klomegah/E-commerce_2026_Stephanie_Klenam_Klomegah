@@ -23,6 +23,7 @@ rad.json
 TestResults.xml
 
 db_cred.php
+paystack_cred.php
 
 # Runtime logs and uploaded images.
 Standard_Lab/shoppn/error/*.log

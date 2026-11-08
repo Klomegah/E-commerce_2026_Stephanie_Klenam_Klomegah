@@ -1,26 +1,13 @@
 <?php
 
-/* classes/CartClass.php - MODEL layer for the shopping cart (Tasks 11 + 12).
-
-   A cart row belongs to an IP ADDRESS, not to an account: `ip_add` is what
-   identifies "this visitor's basket". Two consequences worth remembering:
-
-   1. A guest can fill a cart without ever registering - no login required.
-   2. When a guest registers or logs in, their IP does not change, so the
-      very same rows are found again on the next page load. The guest cart
-      "carries over" for free; there is no merge step to write.
-
-   Every query below is a prepared statement. Nothing here builds SQL out of
-   user input, so no cart query can ever be used for SQL injection. */
+/* classes/CartClass.php - shopping cart model. */
 
 require_once __DIR__ . '/../core/db_class.php';
 
 class CartClass extends Database
 {
-/* MySQL errno 1062 = "duplicate key". It only ever fires if the optional
-   UNIQUE index on (p_id, ip_add) described in the notes is installed.
-   Without the index, the PHP-side isInCart() check below is the only
-   guard; with it, the database is a second line of defence. */
+/* MySQL errno 1062 means a duplicate key. */
+
     const ERR_DUPLICATE_KEY = 1062;
 
 /* A sane ceiling on one line item. The number input in cart.php has a
@@ -33,23 +20,11 @@ class CartClass extends Database
     public $lastError = null;
 
 /**
- * Is this product already in this visitor's cart?
- *
- * The add action calls this BEFORE inserting, so clicking "Add to Cart"
- * five times on the same product produces five clicks but ONE cart row.
- * SELECT ... LIMIT 1 + store_result() is the cheapest way to ask a yes/no
- * question of MySQL: no rows are transferred, only the count.
- *
- * @param  int  $product_id
- * @param  string $ip
- * @return bool true when a row for this product + IP already exists
+ * Check whether a product is already in this visitor's cart.
  */
     public function isInCart($product_id, $ip)
     {
         $stmt = $this->conn->prepare(
-            // p_id, not cart_id: the course schema's cart table has no
-            // cart_id column at all (it is keyed only by indexes), and
-            // p_id exists in every version of the table.
             "SELECT p_id
                FROM cart
               WHERE p_id = ?
@@ -70,20 +45,6 @@ class CartClass extends Database
 
 /**
  * Insert one cart row.
- *
- * $customer_id is part of the required signature but is deliberately NOT
- * written: the course schema gives cart an OPTIONAL `c_id` column, yet
- * the spec's INSERT names only (p_id, ip_add, qty) - so c_id stays NULL
- * and every query keeps keying on ip_add (see the file header). It is
- * accepted so the call matches the specification, and so actually
- * recording it one day needs one edit here, not a new signature
- * everywhere.
- *
- * @param int      $product_id
- * @param int      $qty        quantity for the first add (the link adds 1)
- * @param string   $ip         the visitor's IP, from get_ip()
- * @param int|null $customer_id logged-in customer id, or null for a guest
- * @return bool    true on success
  */
     public function addToCart($product_id, $qty, $ip, $customer_id = null)
     {
@@ -98,15 +59,7 @@ class CartClass extends Database
     }
 
 /**
- * Every cart row for this visitor, joined with the product details.
- *
- * The JOIN (not the PHP side) is what pairs each row with its title,
- * price and image - one query instead of one query per product. INNER
- * JOIN is correct here: a cart row whose product was deleted from the
- * catalogue cannot be bought or displayed, so it is simply not returned.
- *
- * @param  string $ip
- * @return array  list of associative rows
+ * Return all cart rows for this visitor with product details.
  */
     public function getCartItems($ip)
     {
@@ -132,15 +85,7 @@ class CartClass extends Database
     }
 
 /**
- * How many rows are in this visitor's cart - the number the header shows.
- *
- * COUNT(*) is done inside MySQL rather than counting an array in PHP:
- * the database never sends the rows over, it just sends the answer.
- * bind_result() + fetch() reads that single scalar without building a
- * result set at all.
- *
- * @param  string $ip
- * @return int
+ * Count the rows in this visitor's cart.
  */
     public function getCartCount($ip)
     {
@@ -159,21 +104,7 @@ class CartClass extends Database
     }
 
 /**
- * Sum of (qty * unit price) across the visitor's cart.
- *
- * As specified, this iterates the cart rows and adds the line totals up
- * in PHP. It reuses getCartItems(), so the header bar and the cart page
- * total can never disagree with what the table displays - one source of
- * truth. (A pure SQL "SELECT SUM(qty * product_price)" would be one
- * round trip instead of one; the trade-off is discussed in
- * CART_MANAGEMENT_EXPLAINED.md.)
- *
- * Prices are cast to float on the way through: product_price arrives as
- * a string from mysqli, and "2" + "3" is fine but "2.50" + string maths
- * is where PHP's type juggling bites.
- *
- * @param  string $ip
- * @return float
+ * Sum (qty * unit price) across this visitor's cart.
  */
     public function getCartTotal($ip)
     {
@@ -188,13 +119,6 @@ class CartClass extends Database
 
 /**
  * Delete one line from this visitor's cart.
- *
- * Both columns are in the WHERE clause on purpose: p_id alone would
- * delete the product from EVERY visitor's cart, and ip_add alone would
- * empty the whole basket. scoping to (p_id, ip_add) removes exactly one
- * row - the one this visitor can see.
- *
- * @return bool true on success (including "already gone")
  */
     public function removeFromCart($product_id, $ip)
     {
@@ -211,14 +135,6 @@ class CartClass extends Database
 
 /**
  * Change the quantity of one line in this visitor's cart.
- *
- * new_qty >= 1 is enforced here as well as in the Controller: a quantity
- * of 0 means "remove me", which is what the Remove button is for, and a
- * negative quantity would REDUCE the bill - a one-line path to paying
- * less than the goods cost. Defence in depth: the check exists at every
- * layer that could be bypassed.
- *
- * @return bool true on success
  */
     public function updateQty($product_id, $new_qty, $ip)
     {
@@ -241,12 +157,214 @@ class CartClass extends Database
     }
 
 /**
- * @param mysqli_stmt $stmt already prepared and bound
- * @return bool true on success
- *
- * The twin of ProductClass::runWrite(): execute once, translate the
- * duplicate-key errno into lastError, log anything unexpected instead of
- * leaking SQL details to the visitor, and always close the statement.
+ * Record a verified payment as an order.
+ */
+    public function processPayment($customer_id, $ip, $reference, $amount)
+    {
+        if (!is_string($ip) || $ip === ''
+            || !is_string($reference) || $reference === ''
+            || !is_numeric($amount) || (float) $amount <= 0) {
+            return false;
+        }
+
+        $customer_id = $customer_id === null ? null : (int) $customer_id;
+        $amount      = (float) $amount;
+
+        // 1. Invoice number, per the spec. Six digits keeps it readable
+        //    on the invoice; the order_id is the true unique identity.
+        $invoice_no = mt_rand(100000, 999999);
+        $order_date = date('Y-m-d');
+        $created_at = date('Y-m-d H:i:s');
+
+        $this->conn->begin_transaction();
+
+        try {
+            // Re-check the cart total inside the transaction.
+
+            $cart_total = $this->getCartTotal($ip);
+
+            if (abs($cart_total - $amount) > 0.01) {
+                throw new RuntimeException('Amount does not match the cart total.');
+            }
+
+            // 2. The order itself. order_status is set by US, not by the
+            //    browser: only this method reaches this line, and only
+            //    after server-side verification.
+            $stmt = $this->conn->prepare(
+                "INSERT INTO orders
+                    (customer_id, invoice_no, order_date, order_status, created_at)
+                 VALUES (?, ?, ?, 'paid', ?)"
+            );
+            $stmt->bind_param('iiss', $customer_id, $invoice_no, $order_date, $created_at);
+
+            if (!$stmt->execute()) {
+                throw new RuntimeException('Could not insert the order.');
+            }
+
+            $order_id = (int) $this->conn->insert_id;
+            $stmt->close();
+
+            // 3. Copy every cart row in ONE statement. INSERT ... SELECT
+            //    keeps the copy atomic and avoids looping in PHP; cart's
+            //    p_id becomes orderdetails.product_id.
+            $stmt = $this->conn->prepare(
+                "INSERT INTO orderdetails (order_id, product_id, qty)
+                 SELECT ?, p_id, qty
+                   FROM cart
+                  WHERE ip_add = ?"
+            );
+            $stmt->bind_param('is', $order_id, $ip);
+
+            if (!$stmt->execute()) {
+                throw new RuntimeException('Could not copy the cart into order details.');
+            }
+
+            $copied = $stmt->affected_rows;
+            $stmt->close();
+
+            // An empty cart must never produce a paid order. Throwing here
+            // rolls back the order row inserted above.
+            if ($copied < 1) {
+                throw new RuntimeException('Cart is empty; no order rows to copy.');
+            }
+
+            // 4. Empty this visitor's cart. Scoped by ip_add, exactly like
+            //    the rest of the cart queries.
+            $stmt = $this->conn->prepare(
+                "DELETE FROM cart WHERE ip_add = ?"
+            );
+            $stmt->bind_param('s', $ip);
+
+            if (!$stmt->execute()) {
+                throw new RuntimeException('Could not clear the cart.');
+            }
+
+            $stmt->close();
+
+            $this->conn->commit();
+
+            // 5. The Action redirects to payment_success.php?order_id=N.
+            return $order_id;
+        } catch (Throwable $e) {
+            $this->conn->rollback();
+
+            // Never leak SQL details to the visitor; the Action shows a
+            // generic message and logs the reference for support.
+            error_log(
+                'Payment processing failed for reference ' . $reference . ': ' . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+/**
+ * Return one order with its line items and product names.
+ */
+    public function getOrderById($order_id)
+    {
+        $order_id = (int) $order_id;
+
+        if ($order_id < 1) {
+            return null;
+        }
+
+        $stmt = $this->conn->prepare(
+            "SELECT orders.order_id,
+                    orders.customer_id,
+                    orders.invoice_no,
+                    orders.order_date,
+                    orders.order_status,
+                    orderdetails.product_id,
+                    orderdetails.qty,
+                    products.product_title,
+                    products.product_price
+               FROM orders
+          LEFT JOIN orderdetails ON orderdetails.order_id = orders.order_id
+          LEFT JOIN products     ON products.product_id = orderdetails.product_id
+              WHERE orders.order_id = ?
+           ORDER BY orderdetails.product_id"
+        );
+
+        $stmt->bind_param('i', $order_id);
+        $stmt->execute();
+
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        $stmt->close();
+
+        if (empty($rows)) {
+            return null;
+        }
+
+        // Every row repeats the same order columns; take them from the
+        // first row once, then collect the product rows underneath.
+        $order = [
+            'order_id'      => $rows[0]['order_id'],
+            'customer_id'   => $rows[0]['customer_id'],
+            'invoice_no'    => $rows[0]['invoice_no'],
+            'order_date'    => $rows[0]['order_date'],
+            'order_status'  => $rows[0]['order_status'],
+            'order_details' => [],
+        ];
+
+        foreach ($rows as $row) {
+            if ($row['product_id'] === null) {
+                continue;
+            }
+
+            $order['order_details'][] = [
+                'product_id'    => $row['product_id'],
+                'qty'           => $row['qty'],
+                'product_title' => $row['product_title'],
+                'product_price' => $row['product_price'],
+            ];
+        }
+
+        return $order;
+    }
+
+/**
+ * Return the order history for one customer.
+ */
+    public function getOrdersByCustomer($customer_id)
+    {
+        $customer_id = (int) $customer_id;
+
+        if ($customer_id < 1) {
+            return [];
+        }
+
+        $stmt = $this->conn->prepare(
+            "SELECT orders.order_id,
+                    orders.invoice_no,
+                    orders.order_date,
+                    orders.order_status,
+                    COALESCE(SUM(orderdetails.qty), 0) AS item_count,
+                    COALESCE(SUM(orderdetails.qty * products.product_price), 0) AS order_total
+               FROM orders
+          LEFT JOIN orderdetails ON orderdetails.order_id = orders.order_id
+          LEFT JOIN products     ON products.product_id = orderdetails.product_id
+              WHERE orders.customer_id = ?
+           GROUP BY orders.order_id,
+                    orders.invoice_no,
+                    orders.order_date,
+                    orders.order_status
+           ORDER BY orders.order_date DESC, orders.order_id DESC"
+        );
+
+        $stmt->bind_param('i', $customer_id);
+        $stmt->execute();
+
+        $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+        $stmt->close();
+
+        return $orders;
+    }
+
+/**
+ * Execute an already prepared and bound statement.
  */
     private function runWrite($stmt)
     {

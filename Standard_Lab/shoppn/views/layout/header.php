@@ -1,16 +1,6 @@
 <?php
 
-/* views/layout/header.php - included at the top of every page, so it is
-   also where the two "always visible" pieces of cart UI live:
-
-   1. FLASH BAR. Actions communicate by setting $_SESSION['success'] /
-      ['notice'] / ['error'] and redirecting. Pages that want the message
-      inside their own content (login, register, my_account, the cart
-      page...) read and clear these BEFORE including this file, so they
-      are already gone by now - no page ever shows a message twice. Pages
-      that never read them (home, product listings, single product) get
-      the message here instead.
-   2. CART SUMMARY. Count + total for THIS visitor's IP, on every page. */
+/* views/layout/header.php - shared header with flash messages and cart summary. */
 
 require_once __DIR__ . '/../../controllers/CartController.php';
 
@@ -24,23 +14,13 @@ $cart_items     = $cartController->getCartCount(get_ip());
 $cart_price     = $cartController->getCartTotal(get_ip());
 ?>
 
-    
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($page_title ?? 'Shoppn') ?></title>
 
-    <!--
-        Cache-busting.
-
-        A browser that has already cached style.css or validate.js will
-        not fetch them again, so an edit to those files can appear to do
-        nothing: the HTML is new but the old CSS/JS still runs. Appending
-        the file's modification time as a query string gives the URL a new
-        name every time the file changes, which forces a fresh download,
-        and leaves the browser free to cache properly in between.
-    -->
+    <!-- Cache-bust asset URLs with each file's modification time. -->
     <?php
     $asset_v = function ($relative) {
         $path = __DIR__ . '/../../' . $relative;
@@ -50,19 +30,9 @@ $cart_price     = $cartController->getCartTotal(get_ip());
     ?>
     <link rel="stylesheet"
           href="<?= BASE_URL ?>css/style.css?v=<?= $asset_v('css/style.css') ?>">
-    <!--
-        defer means the file downloads in parallel and runs after the HTML
-        is parsed, so validate.js can rely on the form existing.
-        validate.js returns early on pages that have no form, so loading
-        it everywhere is harmless.
-    -->
+    <!-- validate.js runs after the HTML is parsed. -->
     <script src="<?= BASE_URL ?>js/validate.js?v=<?= $asset_v('js/validate.js') ?>" defer></script>
-    <!--
-        admin.js only does anything on the admin product form, so
-        loading it everywhere is harmless. It is a convenience for the
-        admin, never a security control - the real file checks run in
-        actions/add_product_action.php.
-    -->
+    <!-- admin.js only does anything on the admin product form. -->
     <script src="<?= BASE_URL ?>js/admin.js?v=<?= $asset_v('js/admin.js') ?>" defer></script>
     <!-- Styled confirm dialog for destructive forms (data-confirm). -->
     <script src="<?= BASE_URL ?>js/confirm.js?v=<?= $asset_v('js/confirm.js') ?>" defer></script>
@@ -80,18 +50,7 @@ $cart_price     = $cartController->getCartTotal(get_ip());
         </form>
 
         <nav class="site-nav">
-            <!--
-                The cart summary, per the spec: "Shopping Cart - Total
-                Items: N | Total Price: $X | Go to Cart". It is a link, not
-                just text, so the whole bar is one click to the cart. The
-                currency matches the rest of the shop (GH cedis), and the
-                count/total are for THIS visitor's IP, so they are correct
-                for guests too.
-
-                Admins do not need the customer cart UI: hiding it prevents
-                accidentally ending up at the cart/checkout while in
-                management mode.
-            -->
+            <!-- Cart summary for this visitor; hidden from admins. -->
             <?php if (!is_admin()): ?>
             <a href="<?= BASE_URL ?>views/cart.php" class="cart-summary"
                title="Go to your shopping cart">
@@ -108,16 +67,11 @@ $cart_price     = $cartController->getCartTotal(get_ip());
                 </span>
                 <a href="<?= BASE_URL ?>views/account/my_account.php">My Account</a>
 
-                <!--
-                    Admin-only links.
+                <?php if (!is_admin()): ?>
+                    <a href="<?= BASE_URL ?>views/account/my_orders.php">My Orders</a>
+                <?php endif; ?>
 
-                    is_admin() is checked here so a normal customer never
-                    even sees these in the page. That is only cosmetic
-                    though - hiding a link stops nobody. The real
-                    protection is require_admin() at the top of each admin
-                    page and each admin action, which blocks the request
-                    even if someone types the address in by hand.
-                -->
+                <!-- Admin links; real access control is require_admin(). -->
                 <?php if (is_admin()): ?>
                     <a href="<?= BASE_URL ?>views/admin/product.php">Products</a>
                     <a href="<?= BASE_URL ?>views/admin/category.php">Categories</a>

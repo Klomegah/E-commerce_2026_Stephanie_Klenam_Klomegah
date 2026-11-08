@@ -1,8 +1,6 @@
 <?php
 /**
  * views/account/my_account.php - the customer's account page.
- * An ENTRY POINT *and* a PROTECTED page.
- *
  */
 
 
@@ -71,6 +69,9 @@ require_once __DIR__ . '/../layout/header.php';
             </table>
 
             <p>
+                <?php if (!is_admin()): ?>
+                    <a class="btn" href="<?= BASE_URL ?>views/account/my_orders.php">My Orders</a>
+                <?php endif; ?>
                 <a class="btn" href="<?= BASE_URL ?>views/account/edit_account.php">Edit details</a>
                 <a class="btn" href="<?= BASE_URL ?>views/account/change_pass.php">Change password</a>
                 <?php if (!is_admin()): ?>

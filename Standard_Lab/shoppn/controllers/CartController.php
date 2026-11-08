@@ -1,18 +1,6 @@
 <?php
 
-/* controllers/CartController.php - CONTROLLER layer for the cart.
-
-   Thin on purpose, mirroring ProductController:
-     - every public method takes RAW input (usually straight from GET/POST),
-       validates it, and only then calls one CartClass method;
-     - write methods return ['success' => bool, 'error' => string|null]
-       so an Action can turn the failure into a message without ever
-       seeing SQL;
-     - read methods return the value itself (array / int / float / bool).
-
-   Nothing here knows about headers, redirects or HTML - that is the
-   Action's and View's job. Nothing here builds SQL - that is the
-   Model's job. */
+/* controllers/CartController.php - cart controller. */
 
 require_once __DIR__ . '/../classes/CartClass.php';
 
@@ -29,7 +17,7 @@ class CartController
     }
 
 /* ------------------------------------------------------------------ *
- *  Reads - no shape to agree on, the value itself is returned.
+ *  Reads -  the value itself is returned.
  * ------------------------------------------------------------------ */
 
     public function isInCart($product_id, $ip)
@@ -70,14 +58,40 @@ class CartController
         return $this->cart->getCartTotal($ip);
     }
 
+/**
+ * Return the invoice for one order.
+ */
+    public function getOrderById($order_id)
+    {
+        $order_id = self::asPositiveInt($order_id);
+
+        if ($order_id === null) {
+            return null;
+        }
+
+        return $this->cart->getOrderById($order_id);
+    }
+
+/**
+ * Return the signed-in customer's order history.
+ */
+    public function getOrdersByCustomer($customer_id)
+    {
+        $customer_id = self::asPositiveInt($customer_id);
+
+        if ($customer_id === null) {
+            return [];
+        }
+
+        return $this->cart->getOrdersByCustomer($customer_id);
+    }
+
 /* ------------------------------------------------------------------ *
- *  Writes - validated here, executed by the Model.
+ *  Writes - validation happens here, executed by the Model.
  * ------------------------------------------------------------------ */
 
 /**
  * Add one unit of a product to this visitor's cart.
- *
- * @return array ['success' => bool, 'error' => string|null]
  */
     public function addToCart($product_id, $qty, $ip, $customer_id = null)
     {
@@ -111,8 +125,6 @@ class CartController
 
 /**
  * Remove one line from this visitor's cart.
- *
- * @return array ['success' => bool, 'error' => string|null]
  */
     public function removeFromCart($product_id, $ip)
     {
@@ -135,8 +147,6 @@ class CartController
 
 /**
  * Change the quantity of one line in this visitor's cart.
- *
- * @return array ['success' => bool, 'error' => string|null]
  */
     public function updateQty($product_id, $new_qty, $ip)
     {
@@ -167,24 +177,40 @@ class CartController
         return ['success' => true];
     }
 
+/**
+ * Record a verified payment as an order.
+ */
+    public function processPayment($customer_id, $ip, $reference, $amount)
+    {
+        if (!$this->validIp($ip)) {
+            return false;
+        }
+
+        if (!is_string($reference) || !preg_match('/^[A-Za-z0-9._:-]{1,100}$/', $reference)) {
+            return false;
+        }
+
+        if (!is_numeric($amount) || (float) $amount <= 0) {
+            return false;
+        }
+
+        if ($customer_id !== null) {
+            $customer_id = self::asPositiveInt($customer_id);
+
+            if ($customer_id === null) {
+                return false;
+            }
+        }
+
+        return $this->cart->processPayment($customer_id, $ip, $reference, (float) $amount);
+    }
+
 /* ------------------------------------------------------------------ *
  *  Shared helpers.
  * ------------------------------------------------------------------ */
 
 /**
- * Strict "positive integer or nothing" for anything that arrives from a
- * query string or a form field.
- *
- * Deliberately stricter than is_numeric(): is_numeric('3.5') is true and
- * (int) '3.5' silently becomes 3, which would let a crafted form submit
- * a quantity nobody typed. '3.5', '3abc', '', '0', -2 and arrays all
- * return null; '3' and 3 return 3.
- *
- * Public so the Actions can use the one and only version of this rule
- * instead of each re-inventing (and possibly weakening) it.
- *
- * @param  mixed $value
- * @return int|null the value when it is a positive integer, else null
+ * Return a positive integer, or null for anything else.
  */
     public static function asPositiveInt($value)
     {
@@ -202,6 +228,7 @@ class CartController
 /* get_ip() always returns something, but the guard keeps every cart
    query scoped to a real address instead of an empty string - an empty
    ip_add would match rows that have no IP at all. */
+   
     private function validIp($ip)
     {
         return is_string($ip) && $ip !== '';

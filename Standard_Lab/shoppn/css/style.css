@@ -180,10 +180,7 @@ a:hover { text-decoration: underline; }
     font-size: 0.83rem;
 }
 
-/* ---------- Password strength meter + checklist ----------
-   The checklist has to be obvious at a glance, so a satisfied rule
-   changes the WHOLE row - background, border, text colour and a tick -
-   rather than just recolouring a small box that is easy to miss. */
+/* ---------- Password strength meter + checklist ---------- */
 
 /* Password checklist summary. */
 .password-meter {
@@ -457,11 +454,7 @@ a:hover { text-decoration: underline; }
     background: #fff;
 }
 
-/* The photo on a product card.
-
-   height is fixed and object-fit:cover so that a grid of cards lines up
-   into neat rows. Without it, one tall image would make its whole card
-   taller than its neighbours and the grid would look broken. */
+/* Product card photo: fixed height with object-fit cover. */
 .product-thumb {
     display: block;
     width: 100%;
@@ -643,6 +636,97 @@ a:hover { text-decoration: underline; }
     flex-wrap: wrap;
     gap: 0.6rem;
     margin-top: 0.5rem;
+}
+
+/* Order review block on checkout.php. */
+.review-box {
+    margin: 1rem 0 1.25rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.review-box dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.45rem 1.25rem;
+    margin: 0 0 0.75rem;
+}
+
+.review-box dt {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.review-box dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.review-box p {
+    margin: 0;
+}
+
+/* The required confirmation checkbox. */
+.confirm-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 1rem 0;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.confirm-check input {
+    flex: 0 0 auto;
+    margin-top: 0.3rem;
+}
+
+/* Order history table. */
+.order-history .btn-small {
+    white-space: nowrap;
+}
+
+.btn-small {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+}
+
+.order-status {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: #e9edf2;
+    color: #333;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.order-status-paid {
+    background: #e6f4ea;
+    color: var(--ok-fg);
+}
+
+.order-status-pending {
+    background: #fff4e5;
+    color: #9a6700;
+}
+
+/* Visually hidden, still announced by screen readers. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* ---------- Footer ---------- */

@@ -1,28 +1,12 @@
 <?php
 
 /**
- * views/cart.php - the visitor's shopping cart (Tasks 11 + 12).
- *
- * An ENTRY POINT, like my_account.php: it boots core itself, works out
- * what to show, then includes the shared header/sidebar/footer.
- *
- * Deliberately NOT behind require_login(): a cart row belongs to an IP
- * address, so a guest can browse, add, update and remove exactly like a
- * signed-in customer. Nothing on this page reads $_SESSION['customer_id'].
- *
- * It displays data and nothing else - the actual adding, removing and
- * updating happen in the three action files, each of which redirects
- * back here when it is done (the Post/Redirect/Get pattern, so a refresh
- * never asks to re-submit).
- *
- * Admins are redirected away from the cart page: management mode is not
- * a shopping mode, and it keeps accidental checkout impossible in Task
- * 13 without locking the underlying action handlers (which would break
- * guest carry-over behaviour).
+ * views/cart.php - the visitor's shopping cart.
  */
 
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
+
 // Loaded for its IMAGE_DIR constant, so the image path lives in one place.
 require_once __DIR__ . '/../classes/ProductClass.php';
 
@@ -41,10 +25,7 @@ $cartItems = $cartController->getCartItems($ip);
 $cartCount = $cartController->getCartCount($ip);
 $cartTotal = $cartController->getCartTotal($ip);
 
-// Flash messages, read and cleared BEFORE the header is printed - the
-// same convention as my_account.php. The header renders any flash it
-// finds, so by the time it runs these are already gone: one message,
-// shown once, in the page body where it belongs.
+
 $success = $_SESSION['success'] ?? null;
 $notice  = $_SESSION['notice'] ?? null;
 $error   = $_SESSION['error'] ?? null;
@@ -82,22 +63,8 @@ require_once __DIR__ . '/layout/header.php';
 
         <?php else: ?>
 
-            <!--
-                TWO FORMS, ONE TABLE.
+            <!-- Remove and Update post through separate forms. -->
 
-                "Remove" and "Update" are two separate operations with two
-                separate action files, so they must be two separate forms -
-                and a <form> cannot wrap half of a table row. The HTML5
-                form="" attribute solves this: each control names the form
-                it belongs to, wherever it sits in the document. Both forms
-                live here (empty except for their CSRF token), and the
-                checkboxes / quantity boxes below simply point at them.
-
-                The alternative - nesting one form inside the other - is
-                invalid HTML that browsers "repair" in unpredictable ways,
-                and a single form would have to post to one action file,
-                mixing two jobs back together.
-            -->
             <form id="cart-remove-form" method="POST"
                   action="<?= BASE_URL ?>actions/remove_from_cart_action.php">
                 <?= csrf_field() ?>
@@ -127,9 +94,11 @@ require_once __DIR__ . '/layout/header.php';
                     ?>
                         <tr>
                             <td class="cart-col-check">
+
                                 <!-- The aria-label is what a screen reader
                                      announces; without it the box is just
                                      an unlabelled "checkbox". -->
+
                                 <input type="checkbox"
                                        form="cart-remove-form"
                                        name="remove[]"
@@ -151,9 +120,11 @@ require_once __DIR__ . '/layout/header.php';
                             </td>
 
                             <td class="cart-col-qty">
+
                                 <!-- min/max are a convenience for the
                                      keyboard, NOT a safety net: the action
                                      re-validates every value server-side. -->
+
                                 <input type="number"
                                        form="cart-update-form"
                                        name="qty[]"
@@ -163,11 +134,8 @@ require_once __DIR__ . '/layout/header.php';
                                        class="cart-qty-input"
                                        aria-label="Quantity for <?= htmlspecialchars($itemTitle) ?>">
 
-                                <!-- Tells update_qty_action.php WHICH
-                                     product this quantity belongs to. The
-                                     two arrays are index-matched: this
-                                     hidden field and the qty box above are
-                                     rendered together, in the same order. -->
+                                <!-- Identifies which product this quantity belongs to. -->
+
                                 <input type="hidden"
                                        form="cart-update-form"
                                        name="update[]"
@@ -192,13 +160,8 @@ require_once __DIR__ . '/layout/header.php';
                 </tfoot>
             </table>
 
-            <!--
-                The two submit buttons live OUTSIDE both forms on purpose
-                (a button inside form A would submit form A), and point at
-                their form with the same form="" attribute. Ticking no
-                checkbox and pressing "Remove from Cart" submits an empty
-                list, which the action answers with a friendly prompt.
-            -->
+            <!-- Submit buttons point at their forms with the form attribute. -->
+
             <p class="cart-actions">
                 <button type="submit" form="cart-remove-form" class="btn btn-danger">
                     Remove from Cart
@@ -207,8 +170,10 @@ require_once __DIR__ . '/layout/header.php';
                     Update Quantity
                 </button>
                 <a class="btn btn-cancel" href="<?= BASE_URL ?>index.php">Continue Shopping</a>
-                <!-- Checkout is Task 13; the link exists now so the flow
-                     is complete end to end. -->
+
+                <!-- Task 13: the customer confirms the order on checkout.php
+                     before payment.php opens the Paystack popup. -->
+
                 <a class="btn" href="<?= BASE_URL ?>views/checkout.php">Checkout</a>
             </p>
 

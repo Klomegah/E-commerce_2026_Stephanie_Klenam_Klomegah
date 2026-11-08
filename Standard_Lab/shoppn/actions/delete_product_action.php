@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // A form forged on another site has no valid token, so it stops here.
+
 if (!csrf_verify($_POST['csrf_token'] ?? '')) {
     $_SESSION['error'] = 'Your session expired. Please try again.';
     redirect('views/admin/product.php');
@@ -32,6 +33,7 @@ if ($id === false || $id < 1) {
 $controller = new ProductController();
 
 // Read the row first: once it is deleted the image name is gone with it.
+
 $product = $controller->getProductById($id);
 
 $result = $controller->deleteProduct($id);
